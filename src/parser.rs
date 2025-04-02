@@ -99,8 +99,32 @@ impl Parser {
         current.parse().map_err(|_| CalculationError::ParseError { value: current })
     }
 
+    fn validate_parenthesis_usage(&self) -> Result<(), ParseError> {
+        let implicit_mult_regex = Regex::new(r"(\d\()|(\)\d)|(\)\()").unwrap();
+        
+        if let Some(captures) = implicit_mult_regex.captures(&self.input) {
+            let error_message = if captures.get(1).is_some() {
+                format!("digit followed by opening parenthesis in expression")
+            } else if captures.get(2).is_some() {
+                format!("closing parenthesis followed by digit in expression")
+            } else {
+                format!("adjacent parentheses in expression")
+            };
+            
+            return Err(ParseError::SyntaxError(error_message));
+        }
+        
+        Ok(())
+    }
+
     pub fn parse_input(&mut self) -> Result<String, ParseError> {
         // Find parenthesis and iterate starting from the top one until the one from the bottom of the stack is reached
+        if self.input.len() == 0 {
+            return Err(ParseError::EmptyInputPassed)
+        }
+
+        self.validate_parenthesis_usage()?;
+
         loop {
             let start_parenthesis_idx = match self.input.rfind('(') {
                 Some(r) => r + 1,

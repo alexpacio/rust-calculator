@@ -196,6 +196,14 @@ pub mod tests {
     }
 
     #[test]
+    fn test_parse_input_digit_directly_preceding_parenthesis() {
+        let mut parser = Parser::new("2352323(53)".to_string());
+        let result = parser.parse_input();
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), ParseError::SyntaxError(_)));
+    }
+
+    #[test]
     fn test_parse_input_whitespace_handling() {
         let mut parser = Parser::new("   2 +   3 * 4   ".to_string());
         let result = parser.parse_input().unwrap();

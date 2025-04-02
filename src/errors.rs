@@ -6,7 +6,9 @@ pub enum ParseError {
     UnopenedParenthesis,
     MissingClosingParenthesis,
     ComputeOperationFailed(String),
-    InvalidCharacter(String)
+    InvalidCharacter(String),
+    EmptyInputPassed,
+    SyntaxError(String)
 }
 
 impl fmt::Display for ParseError {
@@ -16,6 +18,8 @@ impl fmt::Display for ParseError {
             ParseError::MissingClosingParenthesis => write!(f, "Missing parenthesis closure"),
             ParseError::ComputeOperationFailed(msg) => write!(f, "Compute operation failed: {}", msg),
             ParseError::InvalidCharacter(c) => write!(f, "Invalid character found: {}", c),
+            ParseError::EmptyInputPassed => write!(f, "Empty input passed"),
+            ParseError::SyntaxError(msg) => write!(f, "Expression syntax error: {}", msg),
         }
     }
 }
