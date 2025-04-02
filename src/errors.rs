@@ -15,7 +15,7 @@ impl fmt::Display for ParseError {
             ParseError::UnopenedParenthesis => write!(f, "Input validation error: a parenthesis hasn't been opened while a closing one exists."),
             ParseError::MissingClosingParenthesis => write!(f, "Missing parenthesis closure"),
             ParseError::ComputeOperationFailed(msg) => write!(f, "Compute operation failed: {}", msg),
-            ParseError::InvalidCharacter(c) => write!(f, "Compute operation failed: {}", c),
+            ParseError::InvalidCharacter(c) => write!(f, "Invalid character found: {}", c),
         }
     }
 }

@@ -2,7 +2,7 @@
 pub mod tests {
     use crate::{errors::{CalculationError, ParseError}, utils::{validate_char, ArithmeticOperationSign, CharMeaning, Parser}};
 
-    // ---------- Tests for validate_char ----------
+    // Tests for validate_char
 
     #[test]
     fn test_validate_digit() {
@@ -54,7 +54,7 @@ pub mod tests {
         assert!(result.is_err());
     }
 
-    // ---------- Tests for parse_expression (without parentheses) ----------
+    // Tests for parse_expression (without parentheses)
 
     #[test]
     fn test_parse_expression_addition() {
@@ -86,7 +86,6 @@ pub mod tests {
 
     #[test]
     fn test_parse_expression_precedence() {
-        // Expected: 2 + (3 * 4) = 2 + 12 = 14
         let expr = "2+3*4".to_string();
         let result = Parser::parse_expression(&expr).unwrap();
         assert_eq!(result, 14.0);
@@ -94,7 +93,6 @@ pub mod tests {
 
     #[test]
     fn test_parse_expression_unary_minus() {
-        // Unary minus at the beginning should work correctly.
         let expr = "-3+5".to_string();
         let result = Parser::parse_expression(&expr).unwrap();
         assert_eq!(result, 2.0);
@@ -109,7 +107,6 @@ pub mod tests {
 
     #[test]
     fn test_parse_expression_multiple_operations() {
-        // 2*3*4 should be evaluated as (2*3)*4 = 24
         let expr = "2*3*4".to_string();
         let result = Parser::parse_expression(&expr).unwrap();
         assert_eq!(result, 24.0);
@@ -117,7 +114,6 @@ pub mod tests {
 
     #[test]
     fn test_parse_expression_complex_order() {
-        // 2 + 3*4 - 5/2 = 2 + 12 - 2.5 = 11.5
         let expr = "2+3*4-5/2".to_string();
         let result = Parser::parse_expression(&expr).unwrap();
         assert!((result - 11.5).abs() < 1e-9);
@@ -125,7 +121,6 @@ pub mod tests {
 
     #[test]
     fn test_parse_expression_parse_error() {
-        // Expression contains invalid number format "2a+3"
         let expr = "2a+3".to_string();
         let result = Parser::parse_expression(&expr);
         match result {
@@ -161,13 +156,12 @@ pub mod tests {
         }
     }
 
-    // ---------- Tests for parse_input (with parentheses) ----------
+    // Tests for parse_input (with parentheses)
 
     #[test]
     fn test_parse_input_simple() {
         let mut parser = Parser::new("2+3".to_string());
         let result = parser.parse_input().unwrap();
-        // The result is converted to string via to_string() on the f64 value.
         assert_eq!(result, "5");
     }
 
@@ -175,7 +169,6 @@ pub mod tests {
     fn test_parse_input_with_parentheses() {
         let mut parser = Parser::new("2*(3+4)".to_string());
         let result = parser.parse_input().unwrap();
-        // 2*(3+4) = 2*7 = 14
         assert_eq!(result, "14");
     }
 
@@ -183,13 +176,11 @@ pub mod tests {
     fn test_parse_input_nested_parentheses() {
         let mut parser = Parser::new("2*(3+(4-1))".to_string());
         let result = parser.parse_input().unwrap();
-        // Inner: (4-1) = 3, then (3+3) = 6, then 2*6 = 12
         assert_eq!(result, "12");
     }
 
     #[test]
     fn test_parse_input_extra_closing_parenthesis() {
-        // This input has a closing parenthesis without an opening one.
         let mut parser = Parser::new("2+3)".to_string());
         let result = parser.parse_input();
         assert!(result.is_err());
@@ -198,9 +189,7 @@ pub mod tests {
 
     #[test]
     fn test_parse_input_missing_closing_parenthesis() {
-        // This input is missing a closing parenthesis.
         let mut parser = Parser::new("2*(3+4".to_string());
-        // Expecting a panic due to a missing closing parenthesis.
         let result = parser.parse_input();
         assert!(result.is_err());
         assert!(matches!(result.unwrap_err(), ParseError::MissingClosingParenthesis));
@@ -208,10 +197,8 @@ pub mod tests {
 
     #[test]
     fn test_parse_input_whitespace_handling() {
-        // All whitespace should be ignored.
         let mut parser = Parser::new("   2 +   3 * 4   ".to_string());
         let result = parser.parse_input().unwrap();
-        // Expected: 2 + (3*4) = 14
         assert_eq!(result, "14");
     }
 }

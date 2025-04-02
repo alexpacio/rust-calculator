@@ -10,7 +10,7 @@ impl Parser {
         }
     }
 
-    // Helper function that iteratively processes an operation.
+    // Helper function that iteratively processes an operation
     pub fn process_regex_loop<F>(
         current: &mut String,
         regex: &Regex,
@@ -42,7 +42,7 @@ impl Parser {
                 });
             }
 
-            // Replace only the first occurrence.
+            // Replace only the first occurrence
             *current = regex.replace(current, format!("{}", result)).to_string();
         }
         Ok(())
@@ -51,13 +51,13 @@ impl Parser {
     pub fn parse_expression(expression: &String) -> Result<f64, CalculationError> {
         debug!("expression to be processed: {}", expression);
     
-        // Use a mutable string to track modifications.
+        // Use a mutable string to track modifications
         let mut current = expression.to_string();
     
-        // Regex for multiplication and division.
+        // Regex for multiplication and division
         let regex_mult_div = Regex::new(r"(-?\d+(?:\.\d+)?)\s*([*/])\s*(-?\d+(?:\.\d+)?)").unwrap();
     
-        // Process multiplication and division.
+        // Process multiplication and division
         Self::process_regex_loop(&mut current, &regex_mult_div, |left, op, right| match op {
             "*" => Ok(left * right),
             "/" => {
@@ -79,10 +79,10 @@ impl Parser {
     
         debug!("current after mult/div: {:#?}", current);
     
-        // Regex for addition and subtraction.
+        // Regex for addition and subtraction
         let regex_add_subt = Regex::new(r"(-?\d+(?:\.\d+)?)\s*([+-])\s*(-?\d+(?:\.\d+)?)").unwrap();
     
-        // Process addition and subtraction.
+        // Process addition and subtraction
         Self::process_regex_loop(&mut current, &regex_add_subt, |left, op, right| match op {
             "+" => Ok(left + right),
             "-" => Ok(left - right),
@@ -95,12 +95,12 @@ impl Parser {
     
         debug!("final result string: {:#?}", current);
     
-        // Convert the final string result to f64.
+        // Convert the final string result to f64
         current.parse().map_err(|_| CalculationError::ParseError { value: current })
     }
 
     pub fn parse_input(&mut self) -> Result<String, ParseError> {
-        // find parenthesis and iterate them from the deepest to the less important
+        // Find parenthesis and iterate starting from the top one until the one from the bottom of the stack is reached
         loop {
             let start_parenthesis_idx = match self.input.rfind('(') {
                 Some(r) => r + 1,

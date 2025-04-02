@@ -17,7 +17,7 @@ fn ctrl_channel() -> Result<Receiver<()>, ctrlc::Error> {
 
 fn main() {
     println!("Rust Calculator");
-    println!("Enter expressions (e.g., '2 + 3 * (4 - 1)') to get the result. Type 'exit' or Ctrl-C to quit");
+    println!("Enter expressions (e.g., '2 + 3 * (4 - 1)') to get the result. Press Ctrl-C to quit");
 
     let term_event_listener_recv = ctrl_channel().expect("Failed to setup the sigterm signal handler");
 
@@ -30,11 +30,7 @@ fn main() {
     let stdin = io::stdin();
     'main_loop: for line in stdin.lock().lines() {
         match line {
-            Ok(input) => {
-                if input.trim().to_lowercase() == "exit" {
-                    break 'main_loop;
-                }
-                
+            Ok(input) => {                
                 let mut validation_error: Option<ParseError> = None;
                 'char_loop: for c in input.chars() {
                     match validate_char(&c) {
@@ -53,11 +49,11 @@ fn main() {
                 let mut parser = Parser::new(input);
                 match parser.parse_input() {
                     Ok(res) => println!("Result: {}", res),
-                    Err(e) => println!("Error: {}", e)
+                    Err(e) => eprintln!("Error: {}", e)
                 }
             }
             Err(e) => {
-                println!("Error reading input: {}", e);
+                eprintln!("Error reading input: {}", e);
                 break 'main_loop;
             }
         }
