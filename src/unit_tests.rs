@@ -1,9 +1,8 @@
 #[cfg(test)]
 pub mod tests {
-    use crate::{errors::{CalculationError, ParseError}, utils::{validate_char, ArithmeticOperationSign, CharMeaning, Parser}};
+    use crate::{errors::{EvaluationError, ParseError}, utils::{validate_char, ArithmeticOperationSign, CharMeaning, Parser}, evaluator::Evaluator};
 
     // Tests for validate_char
-
     #[test]
     fn test_validate_digit() {
         let result = validate_char(&'3');
@@ -54,89 +53,88 @@ pub mod tests {
         assert!(result.is_err());
     }
 
-    // Tests for parse_expression (without parentheses)
-
+    // Tests for evaluate_expression (without parentheses)
     #[test]
-    fn test_parse_expression_addition() {
-        let expr = "2+3".to_string();
-        let result = Parser::parse_expression(&expr).unwrap();
+    fn test_evaluate_expression_addition() {
+        let expr = "2+3";
+        let result = Evaluator::evaluate_expression(expr).unwrap();
         assert_eq!(result, 5.0);
     }
 
     #[test]
-    fn test_parse_expression_subtraction() {
-        let expr = "5-3".to_string();
-        let result = Parser::parse_expression(&expr).unwrap();
+    fn test_evaluate_expression_subtraction() {
+        let expr = "5-3";
+        let result = Evaluator::evaluate_expression(expr).unwrap();
         assert_eq!(result, 2.0);
     }
 
     #[test]
-    fn test_parse_expression_multiplication() {
-        let expr = "2*3".to_string();
-        let result = Parser::parse_expression(&expr).unwrap();
+    fn test_evaluate_expression_multiplication() {
+        let expr = "2*3";
+        let result = Evaluator::evaluate_expression(expr).unwrap();
         assert_eq!(result, 6.0);
     }
 
     #[test]
-    fn test_parse_expression_division() {
-        let expr = "6/2".to_string();
-        let result = Parser::parse_expression(&expr).unwrap();
+    fn test_evaluate_expression_division() {
+        let expr = "6/2";
+        let result = Evaluator::evaluate_expression(expr).unwrap();
         assert_eq!(result, 3.0);
     }
 
     #[test]
-    fn test_parse_expression_precedence() {
-        let expr = "2+3*4".to_string();
-        let result = Parser::parse_expression(&expr).unwrap();
+    fn test_evaluate_expression_precedence() {
+        let expr = "2+3*4";
+        let result = Evaluator::evaluate_expression(expr).unwrap();
         assert_eq!(result, 14.0);
     }
 
     #[test]
-    fn test_parse_expression_unary_minus() {
-        let expr = "-3+5".to_string();
-        let result = Parser::parse_expression(&expr).unwrap();
+    fn test_evaluate_expression_unary_minus() {
+        let expr = "-3+5";
+        let result = Evaluator::evaluate_expression(expr).unwrap();
         assert_eq!(result, 2.0);
     }
 
     #[test]
-    fn test_parse_expression_decimals() {
-        let expr = "2.5*2".to_string();
-        let result = Parser::parse_expression(&expr).unwrap();
+    fn test_evaluate_expression_decimals() {
+        let expr = "2.5*2";
+        let result = Evaluator::evaluate_expression(expr).unwrap();
         assert_eq!(result, 5.0);
     }
 
     #[test]
-    fn test_parse_expression_multiple_operations() {
-        let expr = "2*3*4".to_string();
-        let result = Parser::parse_expression(&expr).unwrap();
+    fn test_evaluate_expression_multiple_operations() {
+        let expr = "2*3*4";
+        let result = Evaluator::evaluate_expression(expr).unwrap();
         assert_eq!(result, 24.0);
     }
 
     #[test]
-    fn test_parse_expression_complex_order() {
-        let expr = "2+3*4-5/2".to_string();
-        let result = Parser::parse_expression(&expr).unwrap();
+    fn test_evaluate_expression_complex_order() {
+        let expr = "2+3*4-5/2";
+        let result = Evaluator::evaluate_expression(expr).unwrap();
         assert!((result - 11.5).abs() < 1e-9);
     }
 
     #[test]
-    fn test_parse_expression_parse_error() {
-        let expr = "2a+3".to_string();
-        let result = Parser::parse_expression(&expr);
+    fn test_evaluate_expression_parse_error() {
+        let expr = "2a+3";
+        let result = Evaluator::evaluate_expression(expr);
         match result {
-            Err(CalculationError::ParseError { value }) => {
+            Err(EvaluationError::ParseNumberError { value }) => {
                 assert_eq!(value, "2a+3");
             },
-            _ => panic!("Expected a ParseError"),
+            _ => panic!("Expected a ParseNumberError"),
         }
     }
 
     #[test]
-    fn test_parse_expression_divide_by_zero() {
-        let expr = "4/0".to_string();
-        let result = Parser::parse_expression(&expr);
+    fn test_evaluate_expression_divide_by_zero() {
+        let expr = "4/0";
+        let result = Evaluator::evaluate_expression(expr);
         match result {
-            Err(CalculationError::DivideByZero { left, right }) => {
+            Err(EvaluationError::DivideByZero { left, right }) => {
                 assert_eq!(left, 4.0);
                 assert_eq!(right, 0.0);
             },
@@ -145,19 +143,18 @@ pub mod tests {
     }
 
     #[test]
-    fn test_parse_expression_empty_string() {
-        let expr = "".to_string();
-        let result = Parser::parse_expression(&expr);
+    fn test_evaluate_expression_empty_string() {
+        let expr = "";
+        let result = Evaluator::evaluate_expression(expr);
         match result {
-            Err(CalculationError::ParseError { value }) => {
+            Err(EvaluationError::ParseNumberError { value }) => {
                 assert_eq!(value, "");
             },
-            _ => panic!("Expected a ParseError for empty input"),
+            _ => panic!("Expected a ParseNumberError for empty input"),
         }
     }
 
     // Tests for parse_input (with parentheses)
-
     #[test]
     fn test_parse_input_simple() {
         let mut parser = Parser::new("2+3".to_string());

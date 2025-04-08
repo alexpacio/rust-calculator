@@ -1,8 +1,11 @@
 use std::{io::{self, BufRead}, process, sync::mpsc::{self, Receiver}, thread};
+
 mod errors;
 mod utils;
 mod parser;
+mod evaluator;
 mod unit_tests;
+
 use errors::ParseError;
 use utils::{validate_char, Parser};
 
@@ -41,8 +44,8 @@ fn main() {
                         _ => ()
                     }
                 }
-                if validation_error.is_some() { 
-                    eprintln!("Validation error: {}", validation_error.unwrap().to_string());
+                if let Some(error) = validation_error { 
+                    eprintln!("Validation error: {}", error);
                     continue 'main_loop;
                 };
 
