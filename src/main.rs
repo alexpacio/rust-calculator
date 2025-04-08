@@ -1,13 +1,12 @@
 use std::{io::{self, BufRead}, process, sync::mpsc::{self, Receiver}, thread};
 
-mod errors;
-mod utils;
-mod parser;
-mod evaluator;
-mod unit_tests;
+use calculator::Calculator;
 
-use errors::ParseError;
-use utils::{validate_char, Parser};
+mod errors;
+mod parser;
+mod calculator;
+mod lexer;
+mod unit_tests;
 
 fn ctrl_channel() -> Result<Receiver<()>, ctrlc::Error> {
     let (sender, receiver) = mpsc::channel();
@@ -31,33 +30,21 @@ fn main() {
     });
 
     let stdin = io::stdin();
-    'main_loop: for line in stdin.lock().lines() {
+    for line in stdin.lock().lines() {
         match line {
-            Ok(input) => {                
-                let mut validation_error: Option<ParseError> = None;
-                'char_loop: for c in input.chars() {
-                    match validate_char(&c) {
-                        Err(e) => {
-                            validation_error = Some(e);
-                            break 'char_loop;
-                        },
-                        _ => ()
-                    }
+            Ok(input) => {
+                if input.trim().is_empty() {
+                    continue;
                 }
-                if let Some(error) = validation_error { 
-                    eprintln!("Validation error: {}", error);
-                    continue 'main_loop;
-                };
-
-                let mut parser = Parser::new(input);
-                match parser.parse_input() {
-                    Ok(res) => println!("Result: {}", res),
-                    Err(e) => eprintln!("Error: {}", e)
+                
+                match Calculator::calculate(&input) {
+                    Ok(result) => println!("Result: {}", result),
+                    Err(error) => eprintln!("Error: {}", error)
                 }
             }
             Err(e) => {
                 eprintln!("Error reading input: {}", e);
-                break 'main_loop;
+                break;
             }
         }
     }

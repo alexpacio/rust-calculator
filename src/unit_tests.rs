@@ -1,209 +1,156 @@
 #[cfg(test)]
-pub mod tests {
-    use crate::{errors::{EvaluationError, ParseError}, utils::{validate_char, ArithmeticOperationSign, CharMeaning, Parser}, evaluator::Evaluator};
+mod tests {
+    use crate::{calculator::Calculator, errors::ParseError, lexer::{Lexer, Token}};
 
-    // Tests for validate_char
+    // Lexer tests
     #[test]
-    fn test_validate_digit() {
-        let result = validate_char(&'3');
-        assert!(matches!(result, Ok(CharMeaning::Number)));
+    fn test_lexer_basic_numbers() {
+        let mut lexer = Lexer::new("42".to_string());
+        let tokens = lexer.tokenize().unwrap();
+        assert_eq!(tokens, vec![Token::Number(42.0)]);
     }
 
     #[test]
-    fn test_validate_whitespace() {
-        let result = validate_char(&' ');
-        assert!(matches!(result, Ok(CharMeaning::Whitespace)));
+    fn test_lexer_decimal_numbers() {
+        let mut lexer = Lexer::new("3.14".to_string());
+        let tokens = lexer.tokenize().unwrap();
+        assert_eq!(tokens, vec![Token::Number(3.14)]);
     }
 
     #[test]
-    fn test_validate_multiply_sign() {
-        let result = validate_char(&'*');
-        assert!(matches!(result, Ok(CharMeaning::Sign(ArithmeticOperationSign::Multiply))));
+    fn test_lexer_negative_numbers() {
+        let mut lexer = Lexer::new("-7".to_string());
+        let tokens = lexer.tokenize().unwrap();
+        assert_eq!(tokens, vec![Token::Number(-7.0)]);
     }
 
     #[test]
-    fn test_validate_divide_sign() {
-        let result = validate_char(&'/');
-        assert!(matches!(result, Ok(CharMeaning::Sign(ArithmeticOperationSign::Divide))));
+    fn test_lexer_operators() {
+        let mut lexer = Lexer::new("1+2-3*4/5".to_string());
+        let tokens = lexer.tokenize().unwrap();
+        assert_eq!(tokens, vec![
+            Token::Number(1.0),
+            Token::Plus,
+            Token::Number(2.0),
+            Token::Minus,
+            Token::Number(3.0),
+            Token::Multiply,
+            Token::Number(4.0),
+            Token::Divide,
+            Token::Number(5.0),
+        ]);
     }
 
     #[test]
-    fn test_validate_add_sign() {
-        let result = validate_char(&'+');
-        assert!(matches!(result, Ok(CharMeaning::Sign(ArithmeticOperationSign::Add))));
+    fn test_lexer_parentheses() {
+        let mut lexer = Lexer::new("(1+2)".to_string());
+        let tokens = lexer.tokenize().unwrap();
+        assert_eq!(tokens, vec![
+            Token::OpenParen,
+            Token::Number(1.0),
+            Token::Plus,
+            Token::Number(2.0),
+            Token::CloseParen,
+        ]);
     }
 
     #[test]
-    fn test_validate_subtract_sign() {
-        let result = validate_char(&'-');
-        assert!(matches!(result, Ok(CharMeaning::Sign(ArithmeticOperationSign::Subtract))));
+    fn test_lexer_invalid_character() {
+        let mut lexer = Lexer::new("1+a".to_string());
+        let result = lexer.tokenize();
+        assert!(matches!(result, Err(ParseError::InvalidCharacter(_))));
     }
 
     #[test]
-    fn test_validate_parenthesis() {
-        let left_paren = validate_char(&'(');
-        let right_paren = validate_char(&')');
-        assert!(matches!(left_paren, Ok(CharMeaning::Parenthesis)));
-        assert!(matches!(right_paren, Ok(CharMeaning::Parenthesis)));
+    fn test_lexer_empty_input() {
+        let mut lexer = Lexer::new("".to_string());
+        let result = lexer.tokenize();
+        assert!(matches!(result, Err(ParseError::EmptyInputPassed)));
     }
 
     #[test]
-    fn test_validate_invalid_char() {
-        let result = validate_char(&'a');
-        assert!(result.is_err());
+    fn test_lexer_multiple_decimal_points() {
+        let mut lexer = Lexer::new("3.14.159".to_string());
+        let result = lexer.tokenize();
+        assert!(matches!(result, Err(ParseError::SyntaxError(_))));
     }
 
-    // Tests for evaluate_expression (without parentheses)
+    // Calculator tests
     #[test]
-    fn test_evaluate_expression_addition() {
-        let expr = "2+3";
-        let result = Evaluator::evaluate_expression(expr).unwrap();
+    fn test_calculator_simple_addition() {
+        let result = Calculator::calculate("2+3").unwrap();
         assert_eq!(result, 5.0);
     }
 
     #[test]
-    fn test_evaluate_expression_subtraction() {
-        let expr = "5-3";
-        let result = Evaluator::evaluate_expression(expr).unwrap();
+    fn test_calculator_subtraction() {
+        let result = Calculator::calculate("5-3").unwrap();
         assert_eq!(result, 2.0);
     }
 
     #[test]
-    fn test_evaluate_expression_multiplication() {
-        let expr = "2*3";
-        let result = Evaluator::evaluate_expression(expr).unwrap();
+    fn test_calculator_multiplication() {
+        let result = Calculator::calculate("2*3").unwrap();
         assert_eq!(result, 6.0);
     }
 
     #[test]
-    fn test_evaluate_expression_division() {
-        let expr = "6/2";
-        let result = Evaluator::evaluate_expression(expr).unwrap();
+    fn test_calculator_division() {
+        let result = Calculator::calculate("6/2").unwrap();
         assert_eq!(result, 3.0);
     }
 
     #[test]
-    fn test_evaluate_expression_precedence() {
-        let expr = "2+3*4";
-        let result = Evaluator::evaluate_expression(expr).unwrap();
+    fn test_calculator_order_of_operations() {
+        let result = Calculator::calculate("2+3*4").unwrap();
         assert_eq!(result, 14.0);
     }
 
     #[test]
-    fn test_evaluate_expression_unary_minus() {
-        let expr = "-3+5";
-        let result = Evaluator::evaluate_expression(expr).unwrap();
-        assert_eq!(result, 2.0);
+    fn test_calculator_parentheses() {
+        let result = Calculator::calculate("(2+3)*4").unwrap();
+        assert_eq!(result, 20.0);
     }
 
     #[test]
-    fn test_evaluate_expression_decimals() {
-        let expr = "2.5*2";
-        let result = Evaluator::evaluate_expression(expr).unwrap();
+    fn test_calculator_nested_parentheses() {
+        let result = Calculator::calculate("2*(3+(4-1))").unwrap();
+        assert_eq!(result, 12.0);
+    }
+
+    #[test]
+    fn test_calculator_with_decimals() {
+        let result = Calculator::calculate("2.5*2").unwrap();
         assert_eq!(result, 5.0);
     }
 
     #[test]
-    fn test_evaluate_expression_multiple_operations() {
-        let expr = "2*3*4";
-        let result = Evaluator::evaluate_expression(expr).unwrap();
-        assert_eq!(result, 24.0);
-    }
-
-    #[test]
-    fn test_evaluate_expression_complex_order() {
-        let expr = "2+3*4-5/2";
-        let result = Evaluator::evaluate_expression(expr).unwrap();
-        assert!((result - 11.5).abs() < 1e-9);
-    }
-
-    #[test]
-    fn test_evaluate_expression_parse_error() {
-        let expr = "2a+3";
-        let result = Evaluator::evaluate_expression(expr);
-        match result {
-            Err(EvaluationError::ParseNumberError { value }) => {
-                assert_eq!(value, "2a+3");
-            },
-            _ => panic!("Expected a ParseNumberError"),
-        }
-    }
-
-    #[test]
-    fn test_evaluate_expression_divide_by_zero() {
-        let expr = "4/0";
-        let result = Evaluator::evaluate_expression(expr);
-        match result {
-            Err(EvaluationError::DivideByZero { left, right }) => {
-                assert_eq!(left, 4.0);
-                assert_eq!(right, 0.0);
-            },
-            _ => panic!("Expected a DivideByZero error"),
-        }
-    }
-
-    #[test]
-    fn test_evaluate_expression_empty_string() {
-        let expr = "";
-        let result = Evaluator::evaluate_expression(expr);
-        match result {
-            Err(EvaluationError::ParseNumberError { value }) => {
-                assert_eq!(value, "");
-            },
-            _ => panic!("Expected a ParseNumberError for empty input"),
-        }
-    }
-
-    // Tests for parse_input (with parentheses)
-    #[test]
-    fn test_parse_input_simple() {
-        let mut parser = Parser::new("2+3".to_string());
-        let result = parser.parse_input().unwrap();
-        assert_eq!(result, "5");
-    }
-
-    #[test]
-    fn test_parse_input_with_parentheses() {
-        let mut parser = Parser::new("2*(3+4)".to_string());
-        let result = parser.parse_input().unwrap();
-        assert_eq!(result, "14");
-    }
-
-    #[test]
-    fn test_parse_input_nested_parentheses() {
-        let mut parser = Parser::new("2*(3+(4-1))".to_string());
-        let result = parser.parse_input().unwrap();
-        assert_eq!(result, "12");
-    }
-
-    #[test]
-    fn test_parse_input_extra_closing_parenthesis() {
-        let mut parser = Parser::new("2+3)".to_string());
-        let result = parser.parse_input();
+    fn test_calculator_divide_by_zero() {
+        let result = Calculator::calculate("5/0");
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), ParseError::UnopenedParenthesis));
     }
 
     #[test]
-    fn test_parse_input_missing_closing_parenthesis() {
-        let mut parser = Parser::new("2*(3+4".to_string());
-        let result = parser.parse_input();
+    fn test_calculator_invalid_expression() {
+        let result = Calculator::calculate("5*");
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), ParseError::MissingClosingParenthesis));
     }
 
     #[test]
-    fn test_parse_input_digit_directly_preceding_parenthesis() {
-        let mut parser = Parser::new("2352323(53)".to_string());
-        let result = parser.parse_input();
+    fn test_calculator_unbalanced_parentheses() {
+        let result = Calculator::calculate("(2+3");
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), ParseError::SyntaxError(_)));
     }
 
     #[test]
-    fn test_parse_input_whitespace_handling() {
-        let mut parser = Parser::new("   2 +   3 * 4   ".to_string());
-        let result = parser.parse_input().unwrap();
-        assert_eq!(result, "14");
+    fn test_calculator_implicit_multiplication() {
+        let result = Calculator::calculate("2(3)");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_calculator_complex_expression() {
+        let result = Calculator::calculate("2*(3+4)/(2-0.5)").unwrap();
+        assert!((result - 9.333333).abs() < 0.000001);
     }
 }
